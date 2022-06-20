@@ -1,0 +1,47 @@
+trigger:
+- master
+
+# Run the same task on multiple Operating Systems
+# strategy:
+#   matrix:
+#     linux:
+#       operatingSystem: 'ubuntu-latest'
+#     mac:
+#       operatingSystem: 'macos-latest'   
+#     windows:
+#       operatingSystem: 'windows-latest'          
+
+pool:
+  # vmImage: $(operatingSystem)
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  jobs:
+    - job: BuildJob
+      steps:
+        - bash: echo " Do the Build"
+- stage: DevDeploy
+  jobs:
+    # - job: DevDeployJob
+    #   steps:
+    #     - bash: echo " Do Dev Deploy"
+# Deployment offers far more choices than a normal job. We can also specify an environemnt.
+    - deployment: DevDeployJob
+      environment: DEV
+      strategy:
+      # Run all at once strategy used
+        runOnce:
+          deploy:
+            steps:
+              - script: echo Deploy to Dev
+- stage: QADeploy
+  jobs:
+    - deployment: QADeployJob
+      environment: QA
+      strategy:
+      # Run all at once strategy used
+        runOnce:
+          deploy:
+            steps:
+              - script: echo Deploy to QA           

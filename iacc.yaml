@@ -1,0 +1,67 @@
+# Creating a Kubernetes cluster in Azure using Terraform and DevOps
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: echo KBS Terraform Azure!
+  displayName: 'Run a one-line script'
+  
+
+# Step 1: Create Backend Resounrce Group 
+#      a- Download public key 
+#      b- Intialize k8s cluster by creatng backend resource group
+
+# Download public key file using task assistant( download secure file)
+# We have named the file 'publickey' which is used as one of the variables in command options below
+- task: DownloadSecureFile@1
+  name: publickey
+  inputs:
+    secureFile: 'azure_rsa.pub'
+
+# Following is configured by using task assistant -> Terraform CLI -> init
+# Initialize k8s cluster
+- task: TerraformCLI@0
+  inputs:
+    command: 'init'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/configuration/iaac/azure/kubernetes'
+    # The client_id & client-secret are configured as variables using the variable button
+    # The ssh_public_key values are configured using the library
+    # The commandOption is not really required in init but only in apply below. Hence commenting it out
+    #commandOptions: '-var client_id=$(client_id) -var client_secret=$(client_secret) -var ssh_public_key=$(publickey.secureFilePath)'
+    backendType: 'azurerm'
+    backendServiceArm: 'azure-resource-manager-service-connection'
+    ensureBackend: true
+    backendAzureRmResourceGroupName: 'terraform-resource-group'
+    backendAzureRmResourceGroupLocation: 'westeurope'
+    backendAzureRmStorageAccountName: 'storageaccmailsonymathew'
+    backendAzureRmContainerName: 'storageaccmailsonymathewcontainer'
+    backendAzureRmKey: 'kubernetes-dev.tfstat'
+    allowTelemetryCollection: true
+    
+
+# Step 2: Create the k8s cluster using the iaac script in $(System.DefaultWorkingDirectory)/configuration/iaac/azure/kubernetes 
+#      
+#      
+#
+- task: TerraformCLI@0
+  inputs:
+    command: 'apply'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/configuration/iaac/azure/kubernetes'
+    environmentServiceName: 'azure-resource-manager-service-connection'
+    # The client_id & client-secret are onfigured as variables using the variable button
+    # The ssh_public_key values are configured using the library
+    # The commandOption is not really required in init but only in apply below. Hence commenting it out
+    commandOptions: '-var client_id=$(client_id) -var client_secret=$(client_secret) -var ssh_public_key=$(publickey.secureFilePath)'
+
+
+# # Destroy the k8s cluster
+- task: TerraformCLI@0
+  inputs:
+    command: 'destroy'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/configuration/iaac/azure/kubernetes'
+    environmentServiceName: 'azure-resource-manager-service-connection'
+   
+# #

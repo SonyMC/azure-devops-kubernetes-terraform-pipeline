@@ -1,0 +1,85 @@
+# Stage 1 - Build 
+# 1 Build Docker Image 
+# 2 Push Docker Image with tag 
+# 3 Copy the deployment files to Staging Directory 
+# 4 Publish the artefacts 
+# Stage 2 - Deploy
+# 1 Download the artifacts 
+# 2 Deploy the image  to K8S cluster using deploymnet.yam in F:\OneDrive\Study\DevOps\devops-master-class-master\azure-devops-kubernetes-terraform-pipeline\configuration\kubernetes
+#   - apply -kubectl apply -f deploymenst.yaml
+
+trigger:
+- master
+
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'
+  # tag : 39
+
+# Stage 1 - Build 
+# 1 Build Docker Image 
+# 2 Push Docker Image with tag 
+# 3 Copy the deployment files to Staging Directory 
+# 4 Publish the artefacts 
+stages:
+- stage: Build
+  displayName: Build image
+  jobs:  
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+  # 1 Build Docker Image
+  # 2 Push Docker Image with tag  
+    steps:
+    - task: Docker@2
+      displayName: Build and Push an image
+      inputs:
+        containerRegistry: 'sonymathewc-dockerHub'
+        repository: 'mailsonymathew/currency-exchange-devops'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        tags: '$(tag)'
+  # 3 Copy the deployment files to Staging Directory 
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(System.DefaultWorkingDirectory)'
+        Contents: '**/*.yaml'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+  # 4 Publish the artefacts
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'manifests'
+        publishLocation: 'Container'
+# Stage 2 - Deploy
+# 1 Download the artefacts 
+# 2 Deploy the image  to K8S cluster using deployment.yam in F:\OneDrive\Study\DevOps\devops-master-class-master\azure-devops-kubernetes-terraform-pipeline\configuration\kubernetes
+#   - apply -kubectl apply -f deploymnet.yaml
+#
+- stage: Deploy
+  displayName: Deploy image
+  jobs:  
+  - job: Deploy
+    displayName: Deploy
+    pool:
+      vmImage: 'ubuntu-latest'
+  # 1 Download the artefacts 
+    steps:
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'current'
+        artifactName: 'manifests'
+        itemPattern: '**/*.yaml'
+        targetPath: '$(System.ArtefactDirectory)'
+  # 2 Deploy the image  to K8S cluster using deployment.yaml in F:\OneDrive\Study\DevOps\devops-master-class-master\azure-devops-kubernetes-terraform-pipeline\configuration\kubernetes
+  #   - apply -kubectl apply -f deployment.yaml
+    - task: KubernetesManifest@0
+      inputs:
+        action: 'deploy'
+        kubernetesServiceConnection: 'aws-kubernetes-cluster-service-connection'
+        namespace: 'default'
+        manifests: '$(System.ArtefactDirectory)/configiration/kubernates/deploymnet.yaml'
+        containers: 'mailsonymathew/currency-exchange-devops:$(tag)'

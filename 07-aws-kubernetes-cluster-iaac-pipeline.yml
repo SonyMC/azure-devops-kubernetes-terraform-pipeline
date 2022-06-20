@@ -1,0 +1,39 @@
+# Script for running terraform script creating a k8s cluster 
+# Note : Pipleline might fail witha POST timeoot failure. This is because teh newly created cluster was not rady to accept traffic. If this happens, trigger the pipeline build again 
+# Terraform init - connect to the backend S3 bucket
+# 2. Terraform apply - deploy the changes 
+# 
+ 
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: echo Hello, world!
+  displayName: 'Run a one-line script'
+
+# 1. Terraform init - - connect to the backend S3 bucket
+# Show assistant -> terraform ;cmd -> init 
+# Provider is aws
+# Configuration directory is $(System.DefaultWorkingDirectory)/configuration/iaac/aws/kubernetes
+# Conection name : configured in aws - aws-for-terraform
+# Bucket : configured in aws - terraform-backend-state-mailsonymathew
+# key: value we have given is 'kubernetes-dev.tfstate'
+- task: TerraformTaskV1@0
+  inputs:
+    provider: 'aws'
+    command: 'init'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/configuration/iaac/aws/kubernetes'
+    backendServiceAWS: 'aws-for-terraform'
+    backendAWSBucketName: 'terraform-backend-state-mailsonymathew'
+    backendAWSKey: 'kubernetes-dev.tfstate'
+# 2. Terraform apply - deploy the changes 
+# Show assistannt -> terraform ;cmd -> validate and apply 
+- task: TerraformTaskV1@0
+  inputs:
+    provider: 'aws'
+    command: 'apply'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/configuration/iaac/aws/kubernetes'
+    environmentServiceNameAWS: 'aws-for-terraform'

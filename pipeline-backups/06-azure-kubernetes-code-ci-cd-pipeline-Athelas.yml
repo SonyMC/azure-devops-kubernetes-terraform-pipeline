@@ -1,0 +1,84 @@
+# Stage 1: 
+#    - 1a. Build a Docker Image 
+#    - 1b. Copy the build artifacts generated in 1a to the artifacts staging directory.
+#     -1c. Publish the build artifacts generated in 1a above and copied to the artifacts staging direcotyr in 1b . This will use the k8s configuration files.
+# Stage 2: 
+#      - 2a. Download the build artifacts/k8s config files published in 1b
+#      - 2b. Deploy the artifacts/k8s config files to teh k8s cluster
+
+
+# Stage 1: 
+#    1a. Build and Push Docker Image
+trigger:
+- master
+
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'  
+
+stages:
+- stage: Build
+  displayName: Build image
+  jobs:  
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Docker@2
+      displayName: Build and Push Image
+      inputs:
+        containerRegistry: 'mailsonymathew-dockerHub'
+        repository: 'mailsonymathew/currency-exchange-devops'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        tags: '$(tag)'
+
+# Stage 1: 
+#    1b. Copy the build artifacts generated in 1a to the artifacts staging directory.
+#    Use task assistance -> Copy Files
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: '$(System.DefaultWorkingDirectory)'
+        Contents: '**/*.yaml'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+# Stage 1: 
+#   1c. Publish the build artifacts generated in 1a above and copied to the artifacts staging direcotyr in 1b . This will use the k8s configuration files.
+#    Use task assistance -> Publish build artifacts 
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'manifests'
+        publishLocation: 'Container'
+
+# Stage 2: 
+#      - 2a. Download the build artifacts/k8s config files published in 1b
+#      - 2b. Deploy the artifacts/k8s config files to teh k8s cluster.
+- stage: Deploy
+  displayName: Deploy image
+  jobs:  
+  - job: Deploy
+    displayName: Deploy
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:  
+#    2a. Download the build artifacts/k8s config files published in 1b
+#    Use task assistance : Download Pipeline Artifacts
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'current'
+        artifactName: 'manifests'
+        itemPattern: '**/*.yaml'
+        targetPath: '$(System.ArtifactsDirectory)'
+#    2b. Deploy the artifacts/k8s config files to teh k8s cluster.
+#    Use task assistance : Deploy to kubernetes
+    - task: KubernetesManifest@0
+      inputs:
+        action: 'deploy'
+        kubernetesServiceConnection: 'azure-kubernetes-connection'
+        namespace: 'default'
+        manifests: '$(System.ArtifactsDirectory)/configuration/kubernetes/deployment.yaml'  # This is the path where out deployment.yaml file is available
+        containers: 'mailsonymathew/currency-exchange-devops:$(tag)' # This is docker hub repository

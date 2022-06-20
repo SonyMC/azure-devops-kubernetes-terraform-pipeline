@@ -1,0 +1,34 @@
+# Demo for stages and deployments
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuildJob
+    steps:
+    - bash: echo "Do the build"
+- stage: DevDeploy
+  jobs:
+  # Define deployment ,env ,strategy & deploy steps
+  - deployment: DevDeployJob
+  # Deploy to DEV environment
+    environment: Dev
+  # Strategy used is run all at once  
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: echo deploy to Dev
+- stage: QADeploy
+  jobs:
+  - deployment: QADeployJob
+    environment: QA
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: echo deploy to QA

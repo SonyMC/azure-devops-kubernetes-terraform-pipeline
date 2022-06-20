@@ -1,0 +1,73 @@
+# Demonstating Stages 
+
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+  - stage: Build
+    jobs:
+      - job: FirstJob
+        steps:
+          - bash: echo Build FirstJob
+          # We defined teh vaue of the 'PipelineLevelVariable' using teh 'Variables' button in the top right hand corner
+          # Variables following PipelineVariable are pre-defined variables.
+          - bash: echo $(PipelineLevelVariable)           
+          - bash: echo $(Build.BuildNumber)  
+          - bash: echo $(Build.BuildId)
+          - bash: echo $(Build.SourceBranchName)
+          - bash: echo $(Build.SourcesDirectory)
+          - bash: ls -R $(System.DefaultWorkingDirectory)
+          - bash: echo $(Build.ArtifactStagingDirectory)
+          - bash: java -version
+          - bash: node --version
+          - bash: python --version
+          - bash: mvn --version
+          - bash: ls -R $(Build.ArtifactStagingDirectory)
+# Use Task Asssistant at teh right hand side to search for copy files option. Place the cursor excalty where you want the script tp be added          
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(System.DefaultWorkingDirectory)'
+              Contents: |
+                **/*.yaml
+                **/*.tf
+              TargetFolder: '$(Build.ArtifactStagingDirectory)'
+          - bash: ls -R $(Build.ArtifactStagingDirectory)
+# Publish Artefact : Use thsi from Task assistant. We will need to publish artefact if we want to share something between stages.          
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              ArtifactName: 'drop'
+              publishLocation: 'Container'
+      # - job: SecondJob
+      #   steps:
+      #     - bash: echo Build SecondJob
+  # - stage: DevDeploy
+  #   # Alternate method of declaring variables 
+  #   variables:
+  #     environment: Dev
+  #   dependsOn: Build
+  #   jobs:
+  #     - job: DevDeployJob
+  #       steps:
+  #         - bash: echo Build $(environment)DeployJob
+  # - stage: QADeploy
+  #   variables:
+  #     environment: QA
+  #   dependsOn: Build
+  #   jobs:
+  #     - job: QADeployJob
+  #       steps:
+  #         - bash: echo Build $(environment)DeployJob
+  # - stage: ProdDeploy
+  #   variables:
+  #     environment: Prod
+  #   dependsOn:
+  #   - DevDeploy
+  #   - QADeploy
+  #   jobs:
+  #     - job: ProdDeployJob
+  #       steps:
+  #         - bash: echo Build $(environment)DeployJob

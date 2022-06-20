@@ -1,0 +1,85 @@
+# Deployment Details
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  labels:
+# Deployment label  
+    app: currency-exchange
+  name: currency-exchange
+  namespace: default
+# Pod Specification  
+spec:
+# How many pods?
+  replicas: 2
+  selector:
+    matchLabels:
+ # This label is defined below  and matches the deployment to all the pods withthe specified label 
+      app: currency-exchange
+  strategy:
+ # Release strategy is specified here. 
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+       labels:
+# Pod label       
+        app: currency-exchange
+# Container Specification ( A Pod an contain multiple containers)        
+    spec:
+      containers:
+# Container 1      
+      - name: currency-exchange
+        image: mailsonymathew/currency-exchange-devops     
+        imagePullPolicy: Always # IfNotPresent
+        ports:
+        - name: liveness-port
+          containerPort: 8000
+        resources:
+          requests:
+            cpu: "100m"
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 1024Mi #256Mi       
+# Comment out the Readiness & Liveness probe if teh connection times out.  (   error: deployment 'currency-exchange' exceeded its progress deadlines)       
+#         readinessProbe:
+#           httpGet:
+#             path: /
+#             port: liveness-port
+#           failureThreshold: 5
+#           periodSeconds: 10
+#           initialDelaySeconds: 60
+#         livenessProbe:
+#           httpGet:
+#             path: /
+#             port: liveness-port
+#           failureThreshold: 5
+#           periodSeconds: 10
+#           initialDelaySeconds: 60
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+---
+# Service Details
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: currency-exchange
+  name: currency-exchange
+  namespace: default
+# Service specification matches the service to a specific deployment  
+spec:
+  ports:
+  - port: 8000
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    app: currency-exchange
+# Can be used for web api's where al lrequests need to be send to the same instance. Here since we are using REST api's this does nto matter.    
+  sessionAffinity: None
+# Type of the service  
+  type: LoadBalancer

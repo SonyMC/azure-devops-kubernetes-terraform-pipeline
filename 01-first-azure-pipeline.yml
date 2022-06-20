@@ -1,0 +1,70 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+# Means will trigger a run on any changes to master branch
+trigger:
+- master
+
+#which agent is to be used to run the pipeline
+pool:
+  vmImage: 'ubuntu-latest'
+
+#Azure provides facility to run pipelines as stages,jobs or tasks/steps.
+# Pipelines -> Stages ( E.g. QA/Systest/PROD) -> Jobs are used to deploy to a particular Stage   -> Each job may contain one or more tasks/steps
+
+#Specifying a Job - Job1. 
+jobs:
+- job: Job1   
+  #The below steps/task are part of job1 
+  #Below is an e.g.  of a script for a task which is the most basic element in pipelines.Tasks and steps are synonymous.
+  # First task will echo a sentence
+  steps:
+  - script: echo Job1 **** Hello, world changed!
+    displayName: 'Run a one-line script'
+
+  # Second task is a multi-line script denoted by the pipe symbol (|)
+  - script: |
+      echo Add other tasks to build, test, and deploy your project.
+      echo See https://aka.ms/yaml
+      echo Work Hard, Play Hard
+    displayName: 'Run a multi-line script'
+
+# Specifying another Job - Job2
+- job: Job2
+# Specify the order on which this job is to be executed. Here we are saying execute after Job 1. If we do not do this, jobs will be executed parallely in random order based on the available hosts.
+  dependsOn: Job1 
+  steps:
+  - script: |
+      echo Job 2 
+      echo Balloon
+      echo Bubble 
+      echo Life
+    displayName: 'Tomfoolery'
+  
+# Specifying another Job - Job3
+- job: Job3
+# Specify the order on which this job is to be executed. Here we are saying execute after Job 2. If we do not do this, jobs will eb executed parallely in random order based on the available hosts.
+  dependsOn: Job2 
+  steps:
+  - script: |
+      echo Job 3
+      echo Thorn
+      echo On 
+      echo Rose
+    displayName: 'More Tomfoolery'
+
+# Specifying another Job - Job4
+- job: Job4
+# Specify the order on which this job is to be executed. Here we are saying execute after Job 1 & 2. i.e. no need to wait for job 3 to complete 
+  dependsOn: 
+  - Job1
+  - Job2 
+  steps:
+  - script: |
+      echo Job 4
+      echo Love
+      echo Life 
+      echo King
+    displayName: 'Brain Burst'
