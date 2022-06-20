@@ -37,7 +37,7 @@ stages:
     - task: Docker@2
       displayName: Build and Push an image
       inputs:
-        containerRegistry: 'sonymathewc-dockerHub'
+        containerRegistry: 'mailsonymathew-dockerHub'   #This should be the same as teh Service Connection Name used in Azure DevOps
         repository: 'mailsonymathew/currency-exchange-devops'
         command: 'buildAndPush'
         Dockerfile: '**/Dockerfile'
@@ -56,7 +56,7 @@ stages:
         publishLocation: 'Container'
 # Stage 2 - Deploy
 # 1 Download the artefacts 
-# 2 Deploy the image  to K8S cluster using deployment.yam in F:\OneDrive\Study\DevOps\devops-master-class-master\azure-devops-kubernetes-terraform-pipeline\configuration\kubernetes
+# 2 Deploy the image  to K8S cluster using deployment.yaml in F:\OneDrive\Study\DevOps\devops-master-class-master\azure-devops-kubernetes-terraform-pipeline\configuration\kubernetes
 #   - apply -kubectl apply -f deploymnet.yaml
 #
 - stage: Deploy
@@ -81,5 +81,5 @@ stages:
         action: 'deploy'
         kubernetesServiceConnection: 'aws-kubernetes-cluster-service-connection'
         namespace: 'default'
-        manifests: '$(System.ArtefactDirectory)/configiration/kubernates/deploymnet.yaml'
+        manifests: '$(System.ArtefactDirectory)/configuration/kubernetes/deployment.yaml'
         containers: 'mailsonymathew/currency-exchange-devops:$(tag)'

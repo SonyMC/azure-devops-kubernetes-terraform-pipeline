@@ -54,29 +54,16 @@ provider "kubernetes" {
   host                   = data.aws_eks_cluster.cluster.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
   token                  = data.aws_eks_cluster_auth.cluster.token
-#  load_config_file       = false
-#  version                = "~> 1.9"
 }
 
 module "mailsonymathew-cluster" {
-  source          = "terraform-aws-modules/eks/aws"     # Uses module in   https://github.com/terraform-aws-modules/terraform-aws-eks to create AWS EKS
+  source          = "terraform-aws-modules/eks/aws"     # Refer : Uses module in   https://github.com/terraform-aws-modules/terraform-aws-eks to create AWS EKS
   cluster_name    = "mailsonymathew-cluster"
   cluster_version = "1.22"   # For latest versions refer : https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
   vpc_id          = aws_default_vpc.default.id   # default VPC
   #vpc_id         = "vpc-eec60593"
   subnet_ids         = ["subnet-d58c3ef4", "subnet-84b80fe2"] #CHANGE
-  #subnets = data.aws_subnet_ids.subnets.ids
-
-
-#  node_groups = [
-#    {
-#      instance_type = "t2.micro"
-#      max_capacity  = 5
-#      desired_capacity = 2
-#      min_capacity  = 2
-#    }
-#  ]
-#
+  #subnet_ids = data.aws_subnet_ids.subnets.ids
 
   # Self Managed Node Group(s)
   self_managed_node_group_defaults = {
@@ -87,8 +74,6 @@ module "mailsonymathew-cluster" {
   }
 
 }
-
-
 
 
 # We will use ServiceAccount to connect to K8S Cluster in CI/CD mode
@@ -108,8 +93,3 @@ resource "kubernetes_cluster_role_binding" "example" {
     namespace = "default"
   }
 }
-
-# Needed to set the default region
-#provider "aws" {
-#  region  = "us-east-1"
-#}
