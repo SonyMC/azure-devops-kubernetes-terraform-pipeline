@@ -54,19 +54,30 @@ module "mailsonymathew-cluster" {
   source          = "terraform-aws-modules/eks/aws"     # Uses module in   https://github.com/terraform-aws-modules/terraform-aws-eks to create AWS EKS
   cluster_name    = "mailsonymathew-cluster"
   cluster_version = "1.22"   # For latest versions refer : https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
-  subnets         = ["subnet-d58c3ef4", "subnet-84b80fe2"] #CHANGE
-  #subnets = data.aws_subnet_ids.subnets.ids
   vpc_id          = aws_default_vpc.default.id   # default VPC
   #vpc_id         = "vpc-eec60593"
+  subnet_ids         = ["subnet-d58c3ef4", "subnet-84b80fe2"] #CHANGE
+  #subnets = data.aws_subnet_ids.subnets.ids
 
-  node_groups = [
-    {
-      instance_type = "t2.micro"
-      max_capacity  = 5
-      desired_capacity = 2
-      min_capacity  = 2
-    }
-  ]
+
+#  node_groups = [
+#    {
+#      instance_type = "t2.micro"
+#      max_capacity  = 5
+#      desired_capacity = 2
+#      min_capacity  = 2
+#    }
+#  ]
+#
+
+  # Self Managed Node Group(s)
+  self_managed_node_group_defaults = {
+    instance_type  = "t2.micro"
+    max_capacity  = 5
+    desired_capacity = 2
+    min_capacity  = 2
+  }
+
 }
 
 data "aws_eks_cluster" "cluster" {
